@@ -605,36 +605,36 @@ int main(int argc, char *argv[])
 	tabSalon[0].description = "Salon général par défaut";
 	tabSalon[0].nbPlace = MAX_CLIENT;
 
-	// Création de la socket
-	dS_fichier = socket(PF_INET, SOCK_STREAM, 0);
+	// // Création de la socket
+	// dS_fichier = socket(PF_INET, SOCK_STREAM, 0);
 
-	if (dS_fichier < 0)
-	{
-		perror("[Fichier] Problème de création de socket serveur");
-		exit(-1);
-	}
-	printf("Socket [Fichier] Créé\n");
+	// if (dS_fichier < 0)
+	// {
+	// 	perror("[Fichier] Problème de création de socket serveur");
+	// 	exit(-1);
+	// }
+	// printf("Socket [Fichier] Créé\n");
 
-	// Nommage de la socket
-	struct sockaddr_in ad_file;
-	ad_file.sin_family = AF_INET;
-	ad_file.sin_addr.s_addr = INADDR_ANY;
-	ad_file.sin_port = htons(portServeur + 1);
+	// // Nommage de la socket
+	// struct sockaddr_in ad_file;
+	// ad_file.sin_family = AF_INET;
+	// ad_file.sin_addr.s_addr = INADDR_ANY;
+	// ad_file.sin_port = htons(portServeur + 1);
 
-	if (bind(dS_fichier, (struct sockaddr *)&ad_file, sizeof(ad_file)) < 0)
-	{
-		perror("[Fichier] Erreur lors du nommage de la socket");
-		exit(-1);
-	}
-	printf("[Fichier] Socket nommée\n");
+	// if (bind(dS_fichier, (struct sockaddr *)&ad_file, sizeof(ad_file)) < 0)
+	// {
+	// 	perror("[Fichier] Erreur lors du nommage de la socket");
+	// 	exit(-1);
+	// }
+	// printf("[Fichier] Socket nommée\n");
 
-	// Passage de la socket en mode écoute
-	if (listen(dS_fichier, 7) < 0)
-	{
-		perror("[Fichier] Problème au niveau du listen");
-		exit(-1);
-	}
-	printf("[Fichier] Mode écoute\n");
+	// // Passage de la socket en mode écoute
+	// if (listen(dS_fichier, 7) < 0)
+	// {
+	// 	perror("[Fichier] Problème au niveau du listen");
+	// 	exit(-1);
+	// }
+	// printf("[Fichier] Mode écoute\n");
 
 	// Création de la socket
 	dS = socket(PF_INET, SOCK_STREAM, 0);
