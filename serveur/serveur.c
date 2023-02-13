@@ -81,12 +81,12 @@ struct Salon
  * - semaphoreNbClients = sémaphore pour gérer le nombre de clients
  * - semaphoreThread = sémpahore pour gérer les threads
  * - mutexTabClient = mutexTabClient pour la modification de tabClient[]
- * - mutexSalon = mutexTabClient pour la modification de tabSalon[]
+ * - mutexSalon = mutexTabSalon pour la modification de tabSalon[]
  */
 
 Client tabClient[MAX_CLIENT];
 pthread_t tabThread[MAX_CLIENT];
-// Salon tabSalon[MAX_SALON];
+Salon tabSalon[MAX_SALON];
 long nbClient = 0;
 int dS_fichier;
 int dS;
@@ -94,7 +94,7 @@ int portServeur;
 sem_t semaphoreNbClients;
 sem_t semaphoreThread;
 pthread_mutex_t mutexTabClient;
-// pthread_mutex_t mutexSalon;
+pthread_mutex_t mutexSalon;
 
 // Déclaration des fonctions
 int donnerNumClient();
@@ -832,11 +832,11 @@ int utilisationCommande(char *msg, char *pseudoEnvoyeur)
 
 		return 1;
 	}
-	else if (strcmp(strToken, "/liste\n") == 0)
-	{
-		afficheSalon(pseudoEnvoyeur);
-		return 1;
-	}
+	// else if (strcmp(strToken, "/liste\n") == 0)
+	// {
+	// 	afficheSalon(pseudoEnvoyeur);
+	// 	return 1;
+	// }
 	// else if (strcmp(strToken, "/kick") == 0 || strcmp(strToken, "/quick") == 0)
 	// {
 	// 	char *pseudoToKick = strtok(NULL, " ");
