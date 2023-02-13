@@ -62,7 +62,7 @@ struct Salon
  * - TAILLE_MESSAGE = taille maximum d'un message
  */
 #define MAX_CLIENT 7
-// #define MAX_SALON 3
+#define MAX_SALON 3
 #define TAILLE_PSEUDO 20
 // #define TAILLE_DESCRIPTION 200
 // #define TAILLE_NOM_SALON 20
