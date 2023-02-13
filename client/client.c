@@ -431,11 +431,11 @@ void *envoiPourThread()
 		char *msgAVerif = (char *)malloc(sizeof(char) * strlen(m));
 		strcpy(msgAVerif, m);
 
-		if (utilisationCommande(msgAVerif))
-		{
-			free(m);
-			continue;
-		}
+		// if (utilisationCommande(msgAVerif))
+		// {
+		// 	free(m);
+		// 	continue;
+		// }
 
 		// Envoi
 		envoi(m);
