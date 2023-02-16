@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
     SDL_Texture *texture = NULL;
 
     //SDL_LoadBMP(chemin approximatif de l'image en bmp)
-    image = SDL_LoadBMP("Image/planet2.bmp");
+    image = SDL_LoadBMP("Image/planet.bmp");
 
     if (image == NULL)
     {
@@ -319,47 +319,47 @@ int main(int argc, char *argv[])
         SDL_ExitWithError("Impossible de charger l'image");
     }
 
-    // /*
-    // Permet la création de la future texture
-    // SDL_CreateTextureFromSurface(var rendu, var image)
-    // */
-    // texture = SDL_CreateTextureFromSurface(renderer, image);
-    // //Permet de libérer l'espace utiliser par le chargement de l'image
-    // SDL_FreeSurface(image);
+    /*
+    Permet la création de la future texture
+    SDL_CreateTextureFromSurface(var rendu, var image)
+    */
+    texture = SDL_CreateTextureFromSurface(renderer, image);
+    //Permet de libérer l'espace utiliser par le chargement de l'image
+    SDL_FreeSurface(image);
 
-    // if (texture == NULL)
-    // {
-    //     SDL_DestroyRenderer(renderer);
-    //     SDL_DestroyWindow(window);
-    //     // SDL_ExitWithError("Impossible de creer la texture");
-    // }
+    if (texture == NULL)
+    {
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_ExitWithError("Impossible de creer la texture");
+    }
 
-    // SDL_Rect rectangle;
+    SDL_Rect rectangle;
 
-    // /*
-    // SDL_QueryTexture(var texture, NULL, NULL, largeur du rectangle, hauteur du rectangle)
-    // Permet de chargée la texture dans la mémoire
-    // */
-    // if (SDL_QueryTexture(texture, NULL, NULL, &rectangle.w, &rectangle.h) != 0)
-    // {
-    //     SDL_DestroyRenderer(renderer);
-    //     SDL_DestroyWindow(window);
-    //     // SDL_ExitWithError("Impossible de charger la texture");
-    // }
+    /*
+    SDL_QueryTexture(var texture, NULL, NULL, largeur du rectangle, hauteur du rectangle)
+    Permet de chargée la texture dans la mémoire
+    */
+    if (SDL_QueryTexture(texture, NULL, NULL, &rectangle.w, &rectangle.h) != 0)
+    {
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_ExitWithError("Impossible de charger la texture");
+    }
 
-    // rectangle.x = (WINDOW_WIDTH - rectangle.w) / 2;
-    // rectangle.y = (WINDOW_HEIGHT - rectangle.h) / 2;
+    rectangle.x = (WINDOW_WIDTH - rectangle.w) / 2;
+    rectangle.y = (WINDOW_HEIGHT - rectangle.h) / 2;
 
-    // /*
-    // Permet l'affichage de la texture
-    // SDL_RenderCopy(var rendu, var texture, NULL, var rectangle)
-    // */
-    // if (SDL_RenderCopy(renderer, texture, NULL, &rectangle) != 0)
-    // {
-    //     SDL_DestroyRenderer(renderer);
-    //     SDL_DestroyWindow(window);
-    //     // SDL_ExitWithError("Impossible d'afficher la texture'");
-    // }
+    /*
+    Permet l'affichage de la texture
+    SDL_RenderCopy(var rendu, var texture, NULL, var rectangle)
+    */
+    if (SDL_RenderCopy(renderer, texture, NULL, &rectangle) != 0)
+    {
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_ExitWithError("Impossible d'afficher la texture'");
+    }
 
 	SDL_RenderPresent(renderer);
 
