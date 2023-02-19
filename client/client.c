@@ -30,8 +30,8 @@
  */
 #define TAILLE_PSEUDO 20
 #define TAILLE_MESSAGE 500
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 768
 
 /**
  * - nomFichier = nom du fichier à transférer
@@ -51,6 +51,7 @@ int boolConnect = 0;
 char *addrServeur;
 int portServeur;
 struct sockaddr_in aS;
+char *messageserveur;
 
 // Création des threads
 pthread_t thread_envoi;
@@ -139,6 +140,8 @@ void reception(char *rep, ssize_t size)
 	}
 }
 
+
+
 /**
  * @brief Fonction principale pour le thread gérant la réception de messages.
  */
@@ -184,10 +187,15 @@ void sigintHandler(int sig_num)
 
 void SDL_ExitWithError(const char *message)
 {
-	printf(ANSI_COLOR_YELLOW "\n%s\n" ANSI_COLOR_RESET, message);
+	printf(ANSI_COLOR_YELLOW "%s\n" ANSI_COLOR_RESET, message);
 	sleep(0.2);
 	envoi("/fin\n");
 	exit(1);
+}
+
+void SDL_DoneTask(const char *message)
+{
+	printf("%s\n", message);
 }
 
 // argv[1] = adresse ip
@@ -236,7 +244,7 @@ int main(int argc, char *argv[])
 	char *monPseudo = (char *)malloc(sizeof(char) * TAILLE_PSEUDO);
 	do
 	{
-		printf(ANSI_COLOR_MAGENTA "Votre pseudo (maximum 19 caractères):\n" ANSI_COLOR_RESET);
+		printf(ANSI_COLOR_MAGENTA "\nVotre pseudo (maximum 19 caractères):\n" ANSI_COLOR_RESET);
 		fgets(monPseudo, TAILLE_PSEUDO, stdin);
 		for (int i = 0; i < strlen(monPseudo); i++)
 		{
@@ -279,8 +287,21 @@ int main(int argc, char *argv[])
 	}
 
 	free(monPseudo);
-	printf(ANSI_COLOR_MAGENTA "Connexion complète\n" ANSI_COLOR_RESET);
 	boolConnect = 1;
+
+		//_____________________ Communication _____________________
+
+	if (pthread_create(&thread_envoi, NULL, envoiPourThread, 0) < 0)
+	{
+		fprintf(stderr, ANSI_COLOR_RED "Erreur de création de thread d'envoi client\n" ANSI_COLOR_RESET);
+		exit(-1);
+	}
+
+	if (pthread_create(&thread_reception, NULL, receptionPourThread, 0) < 0)
+	{
+		fprintf(stderr, ANSI_COLOR_RED "Erreur de création de thread réception client\n" ANSI_COLOR_RESET);
+		exit(-1);
+	}
 
 	/*----------------------------------------------------------------------------------------------------------------------------------*/
 
@@ -297,7 +318,7 @@ int main(int argc, char *argv[])
 
     //Execution du programme....
     //SDL_CreateWindow("Titre de la fenêtre", Position X, Position Y, largeur, hauteur, affichage)
-    window = SDL_CreateWindow("Première fenêtre SDL 2", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+    window = SDL_CreateWindow("ChatGTI", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
 
     if (window == NULL)
             SDL_ExitWithError("Impossible de creer la fenêtre echouee");
@@ -310,14 +331,16 @@ int main(int argc, char *argv[])
     SDL_Texture *texture = NULL;
 
     //SDL_LoadBMP(chemin approximatif de l'image en bmp)
-    image = SDL_LoadBMP("Image/planet.bmp");
+    image = SDL_LoadBMP("Image/fond.bmp");
 
     if (image == NULL)
     {
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
-        SDL_ExitWithError("Impossible de charger l'image");
-    }
+        SDL_ExitWithError(ANSI_COLOR_MAGENTA "Impossible de charger l'image");
+    } else {
+		SDL_DoneTask(ANSI_COLOR_MAGENTA "Chargement des images : DONE" ANSI_COLOR_RESET);
+	}
 
     /*
     Permet la création de la future texture
@@ -331,8 +354,10 @@ int main(int argc, char *argv[])
     {
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
-        SDL_ExitWithError("Impossible de creer la texture");
-    }
+        SDL_ExitWithError(ANSI_COLOR_MAGENTA "Impossible de creer la texture" ANSI_COLOR_RESET);
+    } else {
+		SDL_DoneTask(ANSI_COLOR_MAGENTA "Création des textures : DONE" ANSI_COLOR_RESET);
+	}
 
     SDL_Rect rectangle;
 
@@ -344,8 +369,10 @@ int main(int argc, char *argv[])
     {
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
-        SDL_ExitWithError("Impossible de charger la texture");
-    }
+        SDL_ExitWithError(ANSI_COLOR_MAGENTA "Impossible de charger la texture" ANSI_COLOR_RESET);
+    } else {
+		SDL_DoneTask(ANSI_COLOR_MAGENTA "Chargement des textures : DONE" ANSI_COLOR_RESET);
+	}
 
     rectangle.x = (WINDOW_WIDTH - rectangle.w) / 2;
     rectangle.y = (WINDOW_HEIGHT - rectangle.h) / 2;
@@ -358,10 +385,29 @@ int main(int argc, char *argv[])
     {
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
-        SDL_ExitWithError("Impossible d'afficher la texture'");
-    }
+        SDL_ExitWithError(ANSI_COLOR_MAGENTA "Impossible d'afficher la texture'" ANSI_COLOR_RESET);
+    } else {
+		SDL_DoneTask(ANSI_COLOR_MAGENTA "Test de l'affichage des textures : DONE" ANSI_COLOR_RESET);
+	}
 
 	SDL_RenderPresent(renderer);
+	printf(ANSI_COLOR_MAGENTA "Connexion complète\n" ANSI_COLOR_RESET);
+
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+
+	font = TTF_OpenFont("Police/arial_narrow_7.ttf", 20);
+
+    // Créer le champ de saisie de texte
+    SDL_StartTextInput();
+    char text[256];
+    int textLength = 0;
+    int tailletxt = 20;
+
+    if (font == NULL)
+    {
+        printf("Erreur Police\n");
+        return 1;
+    }
 
 	/*----------------------------------------------------------------------------------------------------------------------------------*/
 
@@ -375,35 +421,28 @@ int main(int argc, char *argv[])
         {
             switch(event.type)
             {
-                // case SDL_KEYDOWN:
-                //     switch(event.key.keysym.sym)
-                //     {
-                //         case SDLK_b:
-                //             printf("Vous avez appuye sur B\n");
-                //             continue;
-
-                //         default:
-                //             continue;
-                //     }
-
-                case SDL_MOUSEBUTTONDOWN:
-
-                        /*
-                            SDL_BUTTON_LEFT
-                            SDL_BUTTON_MIDDLE
-                            SDL_BUTTON_RIGHT
-                        */
-
-                        if (event.button.button == SDL_BUTTON_LEFT)
-                                printf("Clic gauche ! \n");
-                        if (event.button.button == SDL_BUTTON_RIGHT)
-                                printf("Clic droit ! \n");
-
-                        // if (event.button.clicks >= 2)
-                        //     printf("Double Clic !\n");
-
-                        // printf("Clic en %dx/%dy\n", event.button.x, event.button.y);
-                        break;
+				case SDL_TEXTINPUT:
+                    // Ajouter le caractère à la chaîne
+                    if (textLength < 62){
+                        strcat(text, event.text.text);
+                        textLength++;
+						if (tailletxt < 1260) 
+                    	{
+                        	tailletxt += 20;
+                    	}
+                    }
+                    break;
+                
+                case SDL_KEYDOWN:
+                    // Effacer le caractère précédent
+                    if (event.key.keysym.sym == SDLK_BACKSPACE && textLength > 0) {
+                        text[--textLength] = '\0';
+                        if (tailletxt > 20)
+                        {
+                            tailletxt -= 20;
+                        }
+                    }
+                    break;
 
                 case SDL_QUIT:
                     program_launched = SDL_FALSE;
@@ -414,33 +453,64 @@ int main(int argc, char *argv[])
                     break;
             }
         }
+
+		// Rendu
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderClear(renderer);
+
+        // Afficher le menu
+        SDL_RenderCopy(renderer, texture, NULL, &rectangle);
+
+        // Afficher le champ de saisie de texte
+        SDL_Rect tchat = { 10, 20, 1260, 650 };
+        SDL_Rect textRect1 = { 10, 690, 1260, 40 };
+        SDL_Rect textRect = { 10, 690, tailletxt, 40 };
+        SDL_RenderDrawRect(renderer, &textRect1);
+        SDL_RenderDrawRect(renderer, &tchat);
+        SDL_Color color = {255, 255, 255, 255};
+
+        // Afficher le texte
+        SDL_Surface* textSurface = TTF_RenderText_Solid(font, text, color);
+        SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+        SDL_FreeSurface(textSurface);
+        SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
+        SDL_DestroyTexture(textTexture);
+
+		SDL_Color White = {255, 255, 255};
+		SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, "messageserveur", White);
+		SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+		SDL_Rect Message_rect;
+
+			if (SDL_QueryTexture(Message, NULL, NULL, &Message_rect.w, &Message_rect.h) != 0)
+		{
+			SDL_DestroyRenderer(renderer);
+			SDL_DestroyWindow(window);
+			SDL_ExitWithError("Impossible de charger la texture");
+		}
+
+		Message_rect.x = (WINDOW_WIDTH - Message_rect.w) / 2;
+		Message_rect.y = (WINDOW_HEIGHT - Message_rect.h) / 2;
+
+		SDL_RenderCopy(renderer, Message, NULL, &Message_rect);
+
+		SDL_FreeSurface(surfaceMessage);
+		SDL_DestroyTexture(Message);
+		SDL_RenderPresent(renderer);
+
     }
+
+	pthread_join(thread_envoi, NULL);
+	pthread_join(thread_reception, NULL);
 
 	/*----------------------------------------------------------------------------------------------------------------------------------*/
 
 	SDL_DestroyTexture(texture); //##############
     SDL_DestroyRenderer(renderer); //##############
     SDL_DestroyWindow(window); //##############
-    // TTF_CloseFont(font);
-    // TTF_Quit();
+    TTF_CloseFont(font); //##############
+    TTF_Quit(); //##############
     SDL_Quit(); //##############
 
-	//_____________________ Communication _____________________
-
-	if (pthread_create(&thread_envoi, NULL, envoiPourThread, 0) < 0)
-	{
-		fprintf(stderr, ANSI_COLOR_RED "Erreur de création de thread d'envoi client\n" ANSI_COLOR_RESET);
-		exit(-1);
-	}
-
-	if (pthread_create(&thread_reception, NULL, receptionPourThread, 0) < 0)
-	{
-		fprintf(stderr, ANSI_COLOR_RED "Erreur de création de thread réception client\n" ANSI_COLOR_RESET);
-		exit(-1);
-	}
-
-	pthread_join(thread_envoi, NULL);
-	pthread_join(thread_reception, NULL);
 
 	printf(ANSI_COLOR_YELLOW "Fin du programme\n" ANSI_COLOR_RESET);
 
