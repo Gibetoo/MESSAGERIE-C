@@ -52,10 +52,11 @@ char *addrServeur;
 int portServeur;
 struct sockaddr_in aS;
 char *messageserveur;
-int stop;
+int stop = 0;
 char *msgfichier = " ";
 int compteur = 0;
 int nb_elements = 0;
+char *msgaenvoyer;
 
 // Création des threads
 pthread_t thread_envoi;
@@ -120,7 +121,7 @@ void *envoiPourThread()
 		char *msgAVerif = (char *)malloc(sizeof(char) * strlen(m));
 		strcpy(msgAVerif, m);
 
-		if (!estFin){
+		if (stop == 0){
 			FILE* fichiermsg = fopen("fichiermsg.txt", "a");
 			if (fichiermsg != NULL)
 			{
@@ -195,14 +196,7 @@ void *receptionPourThread()
 			break;
 		}
 
-		/*Saisie du message au clavier*/
-		char *m = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
-		fgets(m, TAILLE_MESSAGE, stdin);
-
-		// On vérifie si le client veut quitter la communication
-		estFin = finDeCommunication(m);
-
-		if (!estFin){
+		if (stop == 0){
 			FILE* fichiermsg = fopen("fichiermsg.txt", "a");
 			if (fichiermsg != NULL)
 			{
@@ -234,10 +228,10 @@ void *receptionPourThread()
 				msgfichier = contenu;
 
 			}
-		}
 
-		printf("%s\n", r);
-		free(r);
+			printf("%s\n", r);
+			free(r);
+		}
 
 	}
 
@@ -262,8 +256,9 @@ void sigintHandler(int sig_num)
 		envoi(myPseudoEnd);
 	}
 	sleep(0.2);
-	remove("fichiermsg.txt");
+	stop = 1;
 	envoi("/fin\n");
+	remove("fichiermsg.txt");
 	exit(1);
 }
 
@@ -272,6 +267,7 @@ void SDL_ExitWithError(const char *message)
 	printf(ANSI_COLOR_YELLOW "%s\n" ANSI_COLOR_RESET, message);
 	sleep(0.2);
 	envoi("/fin\n");
+	remove("fichiermsg.txt");
 	exit(1);
 }
 
@@ -524,6 +520,17 @@ int main(int argc, char *argv[])
                             tailletxt -= 20;
                         }
                     }
+
+					if (event.key.keysym.sym == SDLK_RETURN) 
+					{
+						printf("%s\n",text);
+						int i;
+						for (i = 0; i < 256; i++)
+						{
+							text[i] = 0;
+						}
+						tailletxt = 0;
+                    }
                     break;
 
                 case SDL_QUIT:
@@ -559,12 +566,12 @@ int main(int argc, char *argv[])
         SDL_DestroyTexture(textTexture);
 
 		SDL_Color White = {255, 255, 255};
-		int wrap_length = 200;
+		int wrap_length = 400;
 		SDL_Surface* surfaceMessage = TTF_RenderUTF8_Blended_Wrapped(font, msgfichier, White, wrap_length);
 		SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
 		SDL_Rect Message_rect;
 
-			if (SDL_QueryTexture(Message, NULL, NULL, &Message_rect.w, &Message_rect.h) != 0)
+		if (SDL_QueryTexture(Message, NULL, NULL, &Message_rect.w, &Message_rect.h) != 0)
 		{
 			SDL_DestroyRenderer(renderer);
 			SDL_DestroyWindow(window);
@@ -573,6 +580,7 @@ int main(int argc, char *argv[])
 
 		Message_rect.x = 30;
 		Message_rect.y = (670 - Message_rect.h);
+		Message_rect.w = 450;
 
 		SDL_RenderCopy(renderer, Message, NULL, &Message_rect);
 
