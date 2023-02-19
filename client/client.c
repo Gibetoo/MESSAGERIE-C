@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <time.h>
+#include <SDL.h>
+#include <SDL2/SDL_ttf.h>
 
 /**
  * Définition des différents codes pour l'utilisation de couleurs dans le texte
@@ -21,21 +23,15 @@
 #define ANSI_COLOR_RESET "\x1b[0m"
 
 /**
- * - MAX_SALON = nombre maximum de salons sur le serveur
  * - TAILLE_PSEUDO = taille maximum du pseudo
- * - TAILLE_DESCRIPTION = taille maximum de la description du salon
- * - TAILLE_NOM_SALON = taille maximum du nom du salon
- * - DOSSIER_CLIENT = nom du dossier où sont stockés les fichiers
- * - TAILLE_NOM_FICHIER = taille maximum du nom du fichier
  * - TAILLE_MESSAGE = taille maximum d'un message
+ * - WINDOW_WIDTH = taille de la fenêtre en largeur
+ * - WINDOW_HEIGHT = taille de la fenêtre en hauteur
  */
-// #define MAX_SALON 7
 #define TAILLE_PSEUDO 20
-#define TAILLE_DESCRIPTION 200
-// #define TAILLE_NOM_SALON 20
-// #define DOSSIER_CLIENT "fichiers_client"
-// #define TAILLE_NOM_FICHIER 100
 #define TAILLE_MESSAGE 500
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 768
 
 /**
  * - nomFichier = nom du fichier à transférer
@@ -55,6 +51,7 @@ int boolConnect = 0;
 char *addrServeur;
 int portServeur;
 struct sockaddr_in aS;
+char *messageserveur;
 
 // Création des threads
 pthread_t thread_envoi;
@@ -70,6 +67,7 @@ void *envoiPourThread();
 void reception(char *rep, ssize_t size);
 void *receptionPourThread();
 void sigintHandler(int sig_num);
+void SDL_ExitWithError(const char *message);
 
 /**
  * @brief Vérifie si un client souhaite quitter la communication.
@@ -101,319 +99,6 @@ void envoi(char *msg)
 }
 
 /**
- * @brief Fonction principale du thread gérant le transfert de fichiers vers le serveur.
- */
-
-// void *envoieFichier()
-// {
-// 	char *nvNomFichier = nomFichier;
-
-// 	// Création de la socket
-// 	int dS_fichier = socket(PF_INET, SOCK_STREAM, 0);
-
-// 	if (dS_fichier == -1)
-// 	{
-// 		fprintf(stderr, ANSI_COLOR_RED "[ENVOI FICHIER] Problème de création de socket client\n" ANSI_COLOR_RESET);
-// 		return NULL;
-// 	}
-
-// 	// Nommage de la socket
-// 	aS.sin_family = AF_INET;
-// 	inet_pton(AF_INET, addrServeur, &(aS.sin_addr));
-// 	aS.sin_port = htons(portServeur + 1);
-// 	socklen_t lgA = sizeof(struct sockaddr_in);
-
-// 	// Envoi d'une demande de connexion
-// 	printf(ANSI_COLOR_MAGENTA "[ENVOI FICHIER] Connection en cours...\n" ANSI_COLOR_RESET);
-// 	if (connect(dS_fichier, (struct sockaddr *)&aS, lgA) < 0)
-// 	{
-// 		fprintf(stderr, ANSI_COLOR_RED "[ENVOI FICHIER] Problème de connexion au serveur\n" ANSI_COLOR_RESET);
-// 		return NULL;
-// 	}
-// 	printf(ANSI_COLOR_MAGENTA "[ENVOI FICHIER] Socket connectée\n" ANSI_COLOR_RESET);
-
-// 	printf("%s\n", nvNomFichier);
-// 	// DEBUT ENVOI FICHIER
-// 	char *chemin = malloc(sizeof(char) * (strlen(DOSSIER_CLIENT) + 2 + strlen(nvNomFichier)));
-// 	strcpy(chemin, DOSSIER_CLIENT);
-// 	strcat(chemin, "/");
-// 	strcat(chemin, nvNomFichier);
-	
-// 	printf("%s\n", chemin);
-
-// 	FILE *stream = fopen(chemin, "r");
-// 	if (stream == NULL)
-// 	{
-// 		fprintf(stderr, "[ENVOI FICHIER] Le fichier n'a pas pu être ouvert en écriture\n" ANSI_COLOR_RESET);
-// 		return NULL;
-// 	}
-
-// 	fseek(stream, 0, SEEK_END);
-// 	int taille = ftell(stream);
-// 	fseek(stream, 0, SEEK_SET);
-
-// 	// Lecture et stockage pour envoi du fichier
-// 	char *toutFichier = malloc(sizeof(char) * taille);
-// 	int tailleFichier = fread(toutFichier, sizeof(char), taille, stream);
-// 	free(chemin);
-// 	fclose(stream);
-
-// 	if (send(dS_fichier, &taille, sizeof(int), 0) == -1)
-// 	{
-// 		fprintf(stderr, ANSI_COLOR_RED "[ENVOI FICHIER] Erreur au send taille du fichier\n" ANSI_COLOR_RESET);
-// 		return NULL;
-// 	}
-// 	if (send(dS_fichier, nvNomFichier, sizeof(char) * 20, 0) == -1)
-// 	{
-// 		fprintf(stderr, ANSI_COLOR_RED "[ENVOI FICHIER] Erreur au send nom du fichier\n" ANSI_COLOR_RESET);
-// 		return NULL;
-// 	}
-// 	if (send(dS_fichier, toutFichier, sizeof(char) * tailleFichier, 0) == -1)
-// 	{
-// 		fprintf(stderr, ANSI_COLOR_RED "[ENVOI FICHIER] Erreur au send contenu du fichier\n" ANSI_COLOR_RESET);
-// 		return NULL;
-// 	}
-// }
-
-/**
- * @brief Fonction principale du thread gérant le transfert de fichier depuis le serveur.
- *
- * @param ds socket du serveur
- */
-
-// void *receptionFichier(void *ds)
-// {
-
-// 	int dS_fichier = (long)ds;
-// 	int codeRetour;
-// 	int index;
-
-// 	char *nomFichier = malloc(sizeof(char) * TAILLE_NOM_FICHIER);
-// 	int tailleFichier;
-
-// 	if (recv(dS_fichier, &tailleFichier, sizeof(int), 0) == -1)
-// 	{
-// 		fprintf(stderr, ANSI_COLOR_RED "[RECEPTION FICHIER] Erreur au recv de la taille du fichier\n" ANSI_COLOR_RESET);
-// 		return NULL;
-// 	}
-
-// 	if (recv(dS_fichier, nomFichier, sizeof(char) * TAILLE_NOM_FICHIER, 0) == -1)
-// 	{
-// 		fprintf(stderr, ANSI_COLOR_RED "[RECEPTION FICHIER] Erreur au recv du nom du fichier\n" ANSI_COLOR_RESET);
-// 		return NULL;
-// 	}
-
-// 	char *buffer = malloc(sizeof(char) * tailleFichier);
-
-// 	if (recv(dS_fichier, buffer, sizeof(char) * tailleFichier, 0) == -1)
-// 	{
-// 		fprintf(stderr, ANSI_COLOR_RED "[RECEPTION FICHIER] Erreur au recv du contenu du fichier\n" ANSI_COLOR_RESET);
-// 		return NULL;
-// 	}
-
-// 	char *emplacementFichier = malloc(sizeof(char) * (strlen(DOSSIER_CLIENT) + 2 + strlen(nomFichier)));
-// 	strcpy(emplacementFichier, DOSSIER_CLIENT);
-// 	strcat(emplacementFichier, "/");
-// 	strcat(emplacementFichier, nomFichier);
-
-// 	FILE *stream = fopen(emplacementFichier, "w");
-// 	if (stream == NULL)
-// 	{
-// 		fprintf(stderr, ANSI_COLOR_RED "[RECEPTION FICHIER] Impossible d'ouvrir le fichier en écriture\n" ANSI_COLOR_RESET);
-// 		return NULL;
-// 	}
-
-// 	if (tailleFichier != fwrite(buffer, sizeof(char), tailleFichier, stream))
-// 	{
-// 		fprintf(stderr, ANSI_COLOR_RED "[RECEPTION FICHIER] Impossible d'écrire dans le fichier\n" ANSI_COLOR_RESET);
-// 		return NULL;
-// 	}
-
-// 	fseek(stream, 0, SEEK_END);
-// 	int taille = ftell(stream);
-// 	fseek(stream, 0, SEEK_SET);
-
-// 	codeRetour = fclose(stream);
-// 	if (codeRetour == EOF)
-// 	{
-// 		fprintf(stderr, ANSI_COLOR_RED "[RECEPTION FICHIER] Problème de fermeture du fichier\n" ANSI_COLOR_RESET);
-// 		return NULL;
-// 	}
-
-// 	if (tailleFichier != taille)
-// 	{
-// 		remove(emplacementFichier);
-// 		shutdown(dS_fichier, 2);
-// 		printf(ANSI_COLOR_MAGENTA "[RECEPTION FICHIER] Un problème est survenu\n" ANSI_COLOR_RESET);
-// 		printf(ANSI_COLOR_MAGENTA "[RECEPTION FICHIER] Veuillez choisir de nouveau le fichier que vous désirez\n" ANSI_COLOR_RESET);
-// 		utilisationCommande("/télécharger\n");
-// 	}
-
-// 	free(nomFichier);
-// 	free(buffer);
-// 	free(emplacementFichier);
-// 	shutdown(dS_fichier, 2);
-// 	printf(ANSI_COLOR_MAGENTA "[RECEPTION FICHIER] Le fichier a bien été téléchargé\n" ANSI_COLOR_RESET);
-// }
-
-/**
- * @brief Vérifie si un client souhaite utiliser une des commandes disponibles.
- *
- * @param msg message du client à vérifier
- * @return 1 si le client utilise une commande, 0 sinon.
- */
-
-// int utilisationCommande(char *msg)
-// {
-// 	char *strToken = strtok(msg, " ");
-// 	if (strcmp(strToken, "/déposer\n") == 0)
-// 	{
-// 		envoi(strToken);
-
-// 		char *tabFichier[50];
-// 		DIR *dossier;
-// 		struct dirent *entry;
-// 		int fichiers = 0;
-
-// 		dossier = opendir(DOSSIER_CLIENT);
-// 		if (dossier == NULL)
-// 		{
-// 			fprintf(stderr, ANSI_COLOR_RED "[ENVOI FICHIER] Impossible d'ouvrir le dossier\n" ANSI_COLOR_RESET);
-// 			return 1;
-// 		}
-
-// 		entry = readdir(dossier);
-// 		entry = readdir(dossier);
-// 		while ((entry = readdir(dossier)))
-// 		{
-// 			tabFichier[fichiers] = entry->d_name;
-// 			printf(ANSI_COLOR_MAGENTA "Fichier %d: %s\n" ANSI_COLOR_RESET,
-// 				   fichiers,
-// 				   entry->d_name);
-// 			fichiers++;
-// 		}
-
-// 		closedir(dossier);
-
-// 		int rep;
-// 		scanf("%d", &rep);
-// 		printf(ANSI_COLOR_MAGENTA "[ENVOI FICHIER] Fichier voulu %d\n" ANSI_COLOR_RESET, rep);
-// 		while (rep < 0 || rep >= fichiers)
-// 		{
-// 			printf(ANSI_COLOR_MAGENTA "[ENVOI FICHIER] Veuillez entrer un numéro valide\n" ANSI_COLOR_RESET);
-// 			scanf("%d", &rep);
-// 		}
-
-// 		strcpy(nomFichier, tabFichier[rep]);
-
-// 		pthread_t thread_envoieFichier;
-
-// 		if (pthread_create(&thread_envoieFichier, NULL, envoieFichier, 0) < 0)
-// 		{
-// 			fprintf(stderr, ANSI_COLOR_RED "[ENVOI FICHIER] Erreur de création de thread de récéption client\n" ANSI_COLOR_RESET);
-// 		}
-
-// 		return 1;
-// 	}
-// 	else if (strcmp(strToken, "/télécharger\n") == 0)
-// 	{
-// 		envoi(strToken);
-
-// 		// Création de la socket
-// 		int dS_fichier = socket(PF_INET, SOCK_STREAM, 0);
-// 		if (dS_fichier == -1)
-// 		{
-// 			fprintf(stderr, ANSI_COLOR_RED "[RECEPTION FICHIER] Problème de création de socket client\n" ANSI_COLOR_RESET);
-// 			return 1;
-// 		}
-// 		printf(ANSI_COLOR_MAGENTA "[RECEPTION FICHIER] Socket Créé\n" ANSI_COLOR_RESET);
-
-// 		// Nommage de la socket
-// 		aS.sin_family = AF_INET;
-// 		inet_pton(AF_INET, addrServeur, &(aS.sin_addr));
-// 		aS.sin_port = htons(portServeur + 1);
-// 		socklen_t lgA = sizeof(struct sockaddr_in);
-
-// 		// Envoi d'une demande de connexion
-// 		printf(ANSI_COLOR_MAGENTA "[RECEPTION FICHIER] Connection en cours...\n" ANSI_COLOR_RESET);
-// 		if (connect(dS_fichier, (struct sockaddr *)&aS, lgA) < 0)
-// 		{
-// 			fprintf(stderr, ANSI_COLOR_RED "[RECEPTION FICHIER] Problème de connexion au serveur\n" ANSI_COLOR_RESET);
-// 			return 1;
-// 		}
-// 		printf(ANSI_COLOR_MAGENTA "[RECEPTION FICHIER] Socket connectée\n" ANSI_COLOR_RESET);
-
-// 		char *listeFichier = malloc(sizeof(char) * (TAILLE_NOM_SALON * MAX_SALON));
-// 		if (recv(dS_fichier, listeFichier, sizeof(char) * (TAILLE_NOM_SALON * MAX_SALON), 0) == -1)
-// 		{
-// 			printf(ANSI_COLOR_RED "[RECEPTION FICHIER] Erreur au recv de la liste des fichiers\n" ANSI_COLOR_RESET);
-// 			return 1;
-// 		}
-// 		printf(ANSI_COLOR_MAGENTA "%s" ANSI_COLOR_RESET, listeFichier);
-
-// 		char *numFichier = malloc(sizeof(char) * 5);
-// 		fgets(numFichier, 5, stdin);
-
-// 		int intNumFichier = atoi(numFichier);
-
-// 		if (send(dS_fichier, &intNumFichier, sizeof(int), 0) == -1)
-// 		{
-// 			fprintf(stderr, ANSI_COLOR_RED "[RECEPTION FICHIER] Erreur à l'envoi de la taille du fichier" ANSI_COLOR_RESET);
-// 			return 1;
-// 		}
-// 		free(numFichier);
-
-// 		pthread_t thread_reception_fichier;
-
-// 		if (pthread_create(&thread_reception_fichier, NULL, receptionFichier, (void *)(long)dS_fichier) < 0)
-// 		{
-// 			fprintf(stderr, ANSI_COLOR_RED "[RECEPTION FICHIER] Erreur de création de thread de récéption client\n" ANSI_COLOR_RESET);
-// 		}
-
-// 		return 1;
-// 	}
-// 	else if (strcmp(strToken, "/modif") == 0)
-// 	{
-// 		strToken = strtok(NULL, " ");
-// 		strToken = strtok(strToken, "\n");
-
-// 		if (strToken == NULL)
-// 		{
-// 			printf("Vous devez rentrer le nom du salon que vous voulez modifier\nFaites \"/aide\" pour plus d'informations\n");
-// 			return 1;
-// 		}
-
-// 		char *commande = malloc(sizeof(char) * (TAILLE_NOM_SALON + 8));
-// 		strcpy(commande, "/modif ");
-// 		strcat(commande, strToken);
-
-// 		// Vérification qu'il n'essaye pas de changer le chat général
-// 		if (strcmp(strToken, "Chat_général") == 0)
-// 		{
-// 			printf(ANSI_COLOR_MAGENTA "Vous ne pouvez pas apporter des modifications sur ce salon ;)\n" ANSI_COLOR_RESET);
-// 		}
-// 		else
-// 		{
-// 			envoi(commande);
-
-// 			free(commande);
-
-// 			printf(ANSI_COLOR_MAGENTA "Entrez les modifications du salon de la forme:\nNomSalon NbrPlaces Description du salon\n" ANSI_COLOR_RESET);
-// 			char *modifs = malloc(sizeof(char) * (TAILLE_NOM_SALON + TAILLE_DESCRIPTION + 10));
-
-// 			fgets(modifs, TAILLE_NOM_SALON + TAILLE_DESCRIPTION + 10, stdin);
-
-// 			envoi(modifs);
-
-// 			free(modifs);
-// 		}
-// 		return 1;
-// 	}
-
-// 	return 0;
-// }
-
-/**
  * @brief Fonction principale pour le thread gérant l'envoi de messages.
  */
 void *envoiPourThread()
@@ -431,11 +116,6 @@ void *envoiPourThread()
 		char *msgAVerif = (char *)malloc(sizeof(char) * strlen(m));
 		strcpy(msgAVerif, m);
 
-		// if (utilisationCommande(msgAVerif))
-		// {
-		// 	free(m);
-		// 	continue;
-		// }
 
 		// Envoi
 		envoi(m);
@@ -459,6 +139,8 @@ void reception(char *rep, ssize_t size)
 		exit(-1);
 	}
 }
+
+
 
 /**
  * @brief Fonction principale pour le thread gérant la réception de messages.
@@ -491,7 +173,7 @@ void *receptionPourThread()
  */
 void sigintHandler(int sig_num)
 {
-	printf(ANSI_COLOR_YELLOW "\nFin du programme avec Ctrl + C \n" ANSI_COLOR_RESET);
+	printf(ANSI_COLOR_YELLOW "\nProgramme Fermé\n" ANSI_COLOR_RESET);
 	if (!boolConnect)
 	{
 		char *myPseudoEnd = (char *)malloc(sizeof(char) * 12);
@@ -503,13 +185,27 @@ void sigintHandler(int sig_num)
 	exit(1);
 }
 
+void SDL_ExitWithError(const char *message)
+{
+	printf(ANSI_COLOR_YELLOW "%s\n" ANSI_COLOR_RESET, message);
+	sleep(0.2);
+	envoi("/fin\n");
+	exit(1);
+}
+
+void SDL_DoneTask(const char *message)
+{
+	printf("%s\n", message);
+}
+
 // argv[1] = adresse ip
 // argv[2] = port
 int main(int argc, char *argv[])
 {
+
 	if (argc < 3)
 	{
-		fprintf(stderr, ANSI_COLOR_RED "Erreur : Lancez avec ./client [votre_ip] [votre_port] " ANSI_COLOR_RESET);
+		fprintf(stderr, ANSI_COLOR_RED "Erreur : Lancez avec ./client [votre_ip] [votre_port]\n" ANSI_COLOR_RESET);
 		return -1;
 	}
 	printf(ANSI_COLOR_MAGENTA "Début programme\n" ANSI_COLOR_RESET);
@@ -548,7 +244,7 @@ int main(int argc, char *argv[])
 	char *monPseudo = (char *)malloc(sizeof(char) * TAILLE_PSEUDO);
 	do
 	{
-		printf(ANSI_COLOR_MAGENTA "Votre pseudo (maximum 19 caractères):\n" ANSI_COLOR_RESET);
+		printf(ANSI_COLOR_MAGENTA "\nVotre pseudo (maximum 19 caractères):\n" ANSI_COLOR_RESET);
 		fgets(monPseudo, TAILLE_PSEUDO, stdin);
 		for (int i = 0; i < strlen(monPseudo); i++)
 		{
@@ -587,13 +283,13 @@ int main(int argc, char *argv[])
 		// Récéption de la réponse du serveur
 		reception(repServeur, sizeof(char) * 61);
 		printf(ANSI_COLOR_MAGENTA "%s\n" ANSI_COLOR_RESET, repServeur);
+
 	}
 
 	free(monPseudo);
-	printf(ANSI_COLOR_MAGENTA "Connexion complète\n" ANSI_COLOR_RESET);
 	boolConnect = 1;
 
-	//_____________________ Communication _____________________
+		//_____________________ Communication _____________________
 
 	if (pthread_create(&thread_envoi, NULL, envoiPourThread, 0) < 0)
 	{
@@ -607,8 +303,214 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+
+	SDL_Window *window = NULL;
+    SDL_Renderer *renderer = NULL;
+    TTF_Font *font = NULL;
+
+    //Fonction si SDL ne démarre pas > Log erreur
+    if (SDL_Init(SDL_INIT_VIDEO) != 0)
+            SDL_ExitWithError("Initialisation SDL");
+
+    if (TTF_Init() != 0)
+            SDL_ExitWithError("Initialisation TTF");
+
+    //Execution du programme....
+    //SDL_CreateWindow("Titre de la fenêtre", Position X, Position Y, largeur, hauteur, affichage)
+    window = SDL_CreateWindow("ChatGTI", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+
+    if (window == NULL)
+            SDL_ExitWithError("Impossible de creer la fenêtre echouee");
+
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+
+	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
+
+    SDL_Surface *image = NULL;
+    SDL_Texture *texture = NULL;
+
+    //SDL_LoadBMP(chemin approximatif de l'image en bmp)
+    image = SDL_LoadBMP("Image/fond.bmp");
+
+    if (image == NULL)
+    {
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_ExitWithError(ANSI_COLOR_MAGENTA "Impossible de charger l'image");
+    } else {
+		SDL_DoneTask(ANSI_COLOR_MAGENTA "Chargement des images : DONE" ANSI_COLOR_RESET);
+	}
+
+    /*
+    Permet la création de la future texture
+    SDL_CreateTextureFromSurface(var rendu, var image)
+    */
+    texture = SDL_CreateTextureFromSurface(renderer, image);
+    //Permet de libérer l'espace utiliser par le chargement de l'image
+    SDL_FreeSurface(image);
+
+    if (texture == NULL)
+    {
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_ExitWithError(ANSI_COLOR_MAGENTA "Impossible de creer la texture" ANSI_COLOR_RESET);
+    } else {
+		SDL_DoneTask(ANSI_COLOR_MAGENTA "Création des textures : DONE" ANSI_COLOR_RESET);
+	}
+
+    SDL_Rect rectangle;
+
+    /*
+    SDL_QueryTexture(var texture, NULL, NULL, largeur du rectangle, hauteur du rectangle)
+    Permet de chargée la texture dans la mémoire
+    */
+    if (SDL_QueryTexture(texture, NULL, NULL, &rectangle.w, &rectangle.h) != 0)
+    {
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_ExitWithError(ANSI_COLOR_MAGENTA "Impossible de charger la texture" ANSI_COLOR_RESET);
+    } else {
+		SDL_DoneTask(ANSI_COLOR_MAGENTA "Chargement des textures : DONE" ANSI_COLOR_RESET);
+	}
+
+    rectangle.x = (WINDOW_WIDTH - rectangle.w) / 2;
+    rectangle.y = (WINDOW_HEIGHT - rectangle.h) / 2;
+
+    /*
+    Permet l'affichage de la texture
+    SDL_RenderCopy(var rendu, var texture, NULL, var rectangle)
+    */
+    if (SDL_RenderCopy(renderer, texture, NULL, &rectangle) != 0)
+    {
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        SDL_ExitWithError(ANSI_COLOR_MAGENTA "Impossible d'afficher la texture'" ANSI_COLOR_RESET);
+    } else {
+		SDL_DoneTask(ANSI_COLOR_MAGENTA "Test de l'affichage des textures : DONE" ANSI_COLOR_RESET);
+	}
+
+	SDL_RenderPresent(renderer);
+	printf(ANSI_COLOR_MAGENTA "Connexion complète\n" ANSI_COLOR_RESET);
+
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+
+	font = TTF_OpenFont("Police/arial_narrow_7.ttf", 20);
+
+    // Créer le champ de saisie de texte
+    SDL_StartTextInput();
+    char text[256];
+    int textLength = 0;
+    int tailletxt = 20;
+
+    if (font == NULL)
+    {
+        printf("Erreur Police\n");
+        return 1;
+    }
+
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+
+	SDL_bool program_launched = SDL_TRUE;
+
+    while(program_launched)
+    {
+        SDL_Event event;
+
+        while(SDL_PollEvent(&event))
+        {
+            switch(event.type)
+            {
+				case SDL_TEXTINPUT:
+                    // Ajouter le caractère à la chaîne
+                    if (textLength < 62){
+                        strcat(text, event.text.text);
+                        textLength++;
+						if (tailletxt < 1260) 
+                    	{
+                        	tailletxt += 20;
+                    	}
+                    }
+                    break;
+                
+                case SDL_KEYDOWN:
+                    // Effacer le caractère précédent
+                    if (event.key.keysym.sym == SDLK_BACKSPACE && textLength > 0) {
+                        text[--textLength] = '\0';
+                        if (tailletxt > 20)
+                        {
+                            tailletxt -= 20;
+                        }
+                    }
+                    break;
+
+                case SDL_QUIT:
+                    program_launched = SDL_FALSE;
+					sigintHandler(2);
+                    break;
+                
+                default:
+                    break;
+            }
+        }
+
+		// Rendu
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_RenderClear(renderer);
+
+        // Afficher le menu
+        SDL_RenderCopy(renderer, texture, NULL, &rectangle);
+
+        // Afficher le champ de saisie de texte
+        SDL_Rect tchat = { 10, 20, 1260, 650 };
+        SDL_Rect textRect1 = { 10, 690, 1260, 40 };
+        SDL_Rect textRect = { 10, 690, tailletxt, 40 };
+        SDL_RenderDrawRect(renderer, &textRect1);
+        SDL_RenderDrawRect(renderer, &tchat);
+        SDL_Color color = {255, 255, 255, 255};
+
+        // Afficher le texte
+        SDL_Surface* textSurface = TTF_RenderText_Solid(font, text, color);
+        SDL_Texture* textTexture = SDL_CreateTextureFromSurface(renderer, textSurface);
+        SDL_FreeSurface(textSurface);
+        SDL_RenderCopy(renderer, textTexture, NULL, &textRect);
+        SDL_DestroyTexture(textTexture);
+
+		SDL_Color White = {255, 255, 255};
+		SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, "messageserveur", White);
+		SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
+		SDL_Rect Message_rect;
+
+			if (SDL_QueryTexture(Message, NULL, NULL, &Message_rect.w, &Message_rect.h) != 0)
+		{
+			SDL_DestroyRenderer(renderer);
+			SDL_DestroyWindow(window);
+			SDL_ExitWithError("Impossible de charger la texture");
+		}
+
+		Message_rect.x = (WINDOW_WIDTH - Message_rect.w) / 2;
+		Message_rect.y = (WINDOW_HEIGHT - Message_rect.h) / 2;
+
+		SDL_RenderCopy(renderer, Message, NULL, &Message_rect);
+
+		SDL_FreeSurface(surfaceMessage);
+		SDL_DestroyTexture(Message);
+		SDL_RenderPresent(renderer);
+
+    }
+
 	pthread_join(thread_envoi, NULL);
 	pthread_join(thread_reception, NULL);
+
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+
+	SDL_DestroyTexture(texture); //##############
+    SDL_DestroyRenderer(renderer); //##############
+    SDL_DestroyWindow(window); //##############
+    TTF_CloseFont(font); //##############
+    TTF_Quit(); //##############
+    SDL_Quit(); //##############
+
 
 	printf(ANSI_COLOR_YELLOW "Fin du programme\n" ANSI_COLOR_RESET);
 
