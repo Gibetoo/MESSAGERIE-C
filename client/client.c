@@ -52,6 +52,10 @@ char *addrServeur;
 int portServeur;
 struct sockaddr_in aS;
 char *messageserveur;
+int stop;
+char *msgfichier = " ";
+int compteur = 0;
+int nb_elements = 0;
 
 // Création des threads
 pthread_t thread_envoi;
@@ -116,6 +120,39 @@ void *envoiPourThread()
 		char *msgAVerif = (char *)malloc(sizeof(char) * strlen(m));
 		strcpy(msgAVerif, m);
 
+		if (!estFin){
+			FILE* fichiermsg = fopen("fichiermsg.txt", "a");
+			if (fichiermsg != NULL)
+			{
+				fprintf(fichiermsg, "Me : %s\n", m);
+				fclose(fichiermsg);
+			}
+
+			FILE* fichier = fopen("fichiermsg.txt", "r");
+			long taille_fichier;
+			char ligne[100], *contenu;
+
+			if (fichier)
+			{
+				// Obtenir la taille du fichier
+				fseek(fichier, 0, SEEK_END);
+				taille_fichier = ftell(fichier);
+				rewind(fichier);
+
+				// Allouer de la mémoire pour le contenu du fichier
+				contenu = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
+
+				// Lire le contenu du fichier dans la variable
+        		fread(contenu, 1, taille_fichier, fichier);
+
+				// Fermer le fichier
+				fclose(fichier);
+
+				// Utiliser le contenu du fichier
+				msgfichier = contenu;
+
+			}
+		}
 
 		// Envoi
 		envoi(m);
@@ -147,6 +184,7 @@ void reception(char *rep, ssize_t size)
  */
 void *receptionPourThread()
 {
+
 	while (!estFin)
 	{
 		char *r = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
@@ -157,9 +195,52 @@ void *receptionPourThread()
 			break;
 		}
 
-		printf("%s", r);
+		/*Saisie du message au clavier*/
+		char *m = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
+		fgets(m, TAILLE_MESSAGE, stdin);
+
+		// On vérifie si le client veut quitter la communication
+		estFin = finDeCommunication(m);
+
+		if (!estFin){
+			FILE* fichiermsg = fopen("fichiermsg.txt", "a");
+			if (fichiermsg != NULL)
+			{
+				fprintf(fichiermsg, "%s\n", r);
+				fclose(fichiermsg);
+			}
+
+			FILE* fichier = fopen("fichiermsg.txt", "r");
+			long taille_fichier;
+			char ligne[100], *contenu;
+
+			if (fichier)
+			{
+				// Obtenir la taille du fichier
+				fseek(fichier, 0, SEEK_END);
+				taille_fichier = ftell(fichier);
+				rewind(fichier);
+
+				// Allouer de la mémoire pour le contenu du fichier
+				contenu = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
+
+				// Lire le contenu du fichier dans la variable
+        		fread(contenu, 1, taille_fichier, fichier);
+
+				// Fermer le fichier
+				fclose(fichier);
+
+				// Utiliser le contenu du fichier
+				msgfichier = contenu;
+
+			}
+		}
+
+		printf("%s\n", r);
 		free(r);
+
 	}
+
 	shutdown(dS, 2);
 	pthread_cancel(thread_envoi);
 	return NULL;
@@ -181,6 +262,7 @@ void sigintHandler(int sig_num)
 		envoi(myPseudoEnd);
 	}
 	sleep(0.2);
+	remove("fichiermsg.txt");
 	envoi("/fin\n");
 	exit(1);
 }
@@ -289,7 +371,7 @@ int main(int argc, char *argv[])
 	free(monPseudo);
 	boolConnect = 1;
 
-		//_____________________ Communication _____________________
+	//_____________________ Communication _____________________
 
 	if (pthread_create(&thread_envoi, NULL, envoiPourThread, 0) < 0)
 	{
@@ -477,7 +559,8 @@ int main(int argc, char *argv[])
         SDL_DestroyTexture(textTexture);
 
 		SDL_Color White = {255, 255, 255};
-		SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, "messageserveur", White);
+		int wrap_length = 200;
+		SDL_Surface* surfaceMessage = TTF_RenderUTF8_Blended_Wrapped(font, msgfichier, White, wrap_length);
 		SDL_Texture* Message = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
 		SDL_Rect Message_rect;
 
@@ -488,15 +571,14 @@ int main(int argc, char *argv[])
 			SDL_ExitWithError("Impossible de charger la texture");
 		}
 
-		Message_rect.x = (WINDOW_WIDTH - Message_rect.w) / 2;
-		Message_rect.y = (WINDOW_HEIGHT - Message_rect.h) / 2;
+		Message_rect.x = 30;
+		Message_rect.y = (670 - Message_rect.h);
 
 		SDL_RenderCopy(renderer, Message, NULL, &Message_rect);
 
 		SDL_FreeSurface(surfaceMessage);
 		SDL_DestroyTexture(Message);
 		SDL_RenderPresent(renderer);
-
     }
 
 	pthread_join(thread_envoi, NULL);
