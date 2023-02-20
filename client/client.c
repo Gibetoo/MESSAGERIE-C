@@ -140,10 +140,10 @@ void *envoiPourThread()
 				rewind(fichier);
 
 				// Allouer de la mémoire pour le contenu du fichier
-				contenu = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
+				contenu = (char *)malloc(taille_fichier);
 
 				// Lire le contenu du fichier dans la variable
-        			fread(contenu, 1, taille_fichier, fichier);
+        		fread(contenu, 1, taille_fichier, fichier);
 
 				// Fermer le fichier
 				fclose(fichier);
@@ -202,8 +202,6 @@ void *receptionPourThread()
 				fprintf(fichiermsg, "%s\n\n", r);
 				fclose(fichiermsg);
 			}
-			
-			sleep(0.5);
 
 			FILE* fichier = fopen("fichiermsg.txt", "r");
 			long taille_fichier;
@@ -217,10 +215,10 @@ void *receptionPourThread()
 				rewind(fichier);
 
 				// Allouer de la mémoire pour le contenu du fichier
-				contenu = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
+				contenu = (char *)malloc(taille_fichier);
 
 				// Lire le contenu du fichier dans la variable
-        			fread(contenu, 1, taille_fichier, fichier);
+        		fread(contenu, 1, taille_fichier, fichier);
 
 				// Fermer le fichier
 				fclose(fichier);
@@ -492,6 +490,8 @@ int main(int argc, char *argv[])
 
 	SDL_bool program_launched = SDL_TRUE;
 
+	char *insultes[] = {"tg", "salope", "pétasse", "pd"};
+
     while(program_launched)
     {
         SDL_Event event;
@@ -523,81 +523,94 @@ int main(int argc, char *argv[])
                         
                     }
 
-			if (event.key.keysym.sym == SDLK_RETURN) 
-			{
-				int i;
-				for (i = 0; i < strlen(text); i++)
-				{
-					if (text[i] == '\0')
+					if (event.key.keysym.sym == SDLK_RETURN) 
 					{
-						text[i+1] = '\n';
-					}
-				}
-				char *msgaenvoyer = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
-				strcpy(msgaenvoyer ,text);
-				
-				for (i = 0; i < 256; i++)
-				{
-					text[i] = 0;
-				}
-			tailletxt = 0;
-			
-			// On vérifie si le client veut quitter la communication
-			estFin = finDeCommunication(msgaenvoyer);
-			
-			
-			if (stop == 0)
-			{
-				
-				if (estFin == 1)
-				{
-					sigintHandler(2);
-				}
-				
-				FILE* fichiermsg = fopen("fichiermsg.txt", "a");
-				if (fichiermsg != NULL)
-				{
-					fprintf(fichiermsg, "Me : %s\n\n", msgaenvoyer);
-					fclose(fichiermsg);
-				}
+						char *msgaenvoyer = (char *)malloc(sizeof(char) * strlen(text));
+						strcpy(msgaenvoyer ,text);
 
-				FILE* fichier = fopen("fichiermsg.txt", "r");
-				long taille_fichier;
-				char *contenu2;
+						char *msgAVerif = (char *)malloc(sizeof(char) * strlen(text));
+						strcpy(msgAVerif, text);
 
-				if (fichier)
-				{
-					// Obtenir la taille du fichier
-					fseek(fichier, 0, SEEK_END);
-					taille_fichier = ftell(fichier);
-					rewind(fichier);
+						/** 	Cernsure des insultes 	**/
 
-					// Allouer de la mémoire pour le contenu du fichier
-					contenu2 = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
+						// Tableau des insultes à censurer
 
-					// Lire le contenu du fichier dans la variable
-					fread(contenu2, 1, taille_fichier, fichier);
+						int found = 0;
+						for(int i = 0; i < sizeof(insultes) / sizeof(char *); i++) {
+							if(strstr(msgaenvoyer, insultes[i]) != NULL) {
+							found = 1;
+							break;
+							}
+						}
 
-					// Fermer le fichier
-					fclose(fichier);
+						if(found) {
+							msgaenvoyer = "Message censuré";
+						}
 
-					// Utiliser le contenu du fichier
-					msgfichier = contenu2;
+						/**--------------------------**/
+
+						for (int i = 0; i < 256; i++)
+						{
+							text[i] = 0;
+						}
+						tailletxt = 0;
 					
-				}
-				envoi(msgaenvoyer);
-			}
-                    }
-                    break;
+						// On vérifie si le client veut quitter la communication
+						estFin = finDeCommunication(msgaenvoyer);
+						
+						
+						if (stop == 0)
+						{
+							
+							if (estFin == 1)
+							{
+								sigintHandler(2);
+							}
+							
+							FILE* fichiermsg = fopen("fichiermsg.txt", "a");
+							if (fichiermsg != NULL)
+							{
+								fprintf(fichiermsg, "Me : %s\n\n", msgaenvoyer);
+								fclose(fichiermsg);
+							}
 
-                case SDL_QUIT:
-                    program_launched = SDL_FALSE;
-					sigintHandler(2);
-                    break;
-                
-                default:
-                    break;
-            }
+							FILE* fichier = fopen("fichiermsg.txt", "r");
+							long taille_fichier;
+							char *contenu2;
+
+							if (fichier)
+							{
+								// Obtenir la taille du fichier
+								fseek(fichier, 0, SEEK_END);
+								taille_fichier = ftell(fichier);
+								rewind(fichier);
+
+								// Allouer de la mémoire pour le contenu du fichier
+								contenu2 = (char *)malloc(taille_fichier);
+
+								// Lire le contenu du fichier dans la variable
+								fread(contenu2, 1, taille_fichier, fichier);
+
+								// Fermer le fichier
+								fclose(fichier);
+
+								// Utiliser le contenu du fichier
+								msgfichier = contenu2;
+								
+							}
+							envoi(msgaenvoyer);
+						}
+					}
+					break;
+
+					case SDL_QUIT:
+						program_launched = SDL_FALSE;
+						sigintHandler(2);
+						break;
+					
+					default:
+						break;
+				}
         }
 
 		// Rendu
