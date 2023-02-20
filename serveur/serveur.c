@@ -309,42 +309,7 @@ void endOfThread(int numclient)
 int utilisationCommande(char *msg, char *pseudoEnvoyeur)
 {
 	char *strToken = strtok(msg, " ");
-	if (strcmp(strToken, "/mp") == 0)
-	{
-		// Récupération du pseudo à qui envoyer le mp
-		char *pseudoRecepteur = (char *)malloc(sizeof(char) * TAILLE_PSEUDO);
-		pseudoRecepteur = strtok(NULL, " ");
-
-		if (pseudoRecepteur == NULL || verifPseudo(pseudoRecepteur) == 0)
-		{
-			envoiPrive(pseudoEnvoyeur, "Pseudo érronné ou utilisation incorrecte de la commande /mp\nFaites \"/aide\" pour plus d'informations\n");
-			printf("Commande \"/mp\" mal utilisée\n");
-			return 1;
-		}
-
-		char *msg = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
-		msg = strtok(NULL, "");
-
-		if (msg == NULL)
-		{
-			envoiPrive(pseudoEnvoyeur, "Message à envoyé vide\nFaites \"/aide\" pour plus d'informations\n");
-			printf("Commande \"/mp\" mal utilisée\n");
-			return 1;
-		}
-
-		// Préparation du message à envoyer
-		char *msgAEnvoyer = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
-		strcpy(msgAEnvoyer, pseudoEnvoyeur);
-		strcat(msgAEnvoyer, " vous chuchote : ");
-		strcat(msgAEnvoyer, msg);
-
-		// Envoi du message au destinataire
-		printf("Envoi du message de %s au clients %s.\n", pseudoEnvoyeur, pseudoRecepteur);
-		envoiPrive(pseudoRecepteur, msgAEnvoyer);
-		free(msgAEnvoyer);
-		return 1;
-	}
-	else if (strcmp(strToken, "/estConnecte") == 0)
+	if (strcmp(strToken, "/estConnecte") == 0)
 	{
 		// Récupération du pseudo
 		char *pseudoAVerif = (char *)malloc(sizeof(char) * TAILLE_PSEUDO);
@@ -358,7 +323,7 @@ int utilisationCommande(char *msg, char *pseudoEnvoyeur)
 		if (verifPseudo(pseudoAVerif))
 		{
 			// Envoi du message au destinataire
-			strcat(msgAEnvoyer, " est en ligne\n");
+			strcat(msgAEnvoyer, " est en ligne");
 			envoiPrive(pseudoEnvoyeur, msgAEnvoyer);
 		}
 		else
@@ -371,7 +336,7 @@ int utilisationCommande(char *msg, char *pseudoEnvoyeur)
 		free(msgAEnvoyer);
 		return 1;
 	}
-	else if (strcmp(strToken, "/aide\n") == 0)
+	else if (strcmp(strToken, "/aide") == 0)
 	{
 		// Envoie de l'aide au client, un message par ligne
 		FILE *fichierCom = NULL;
@@ -398,7 +363,7 @@ int utilisationCommande(char *msg, char *pseudoEnvoyeur)
 		fclose(fichierCom);
 		return 1;
 	}
-	else if (strcmp(strToken, "/enLigne\n") == 0)
+	else if (strcmp(strToken, "/enLigne") == 0)
 	{
 		char *chaineEnLigne = malloc(sizeof(char) * (TAILLE_PSEUDO + 15) * 20); // Tous les 20 utilisateurs envoie de la chaine concaténée
 		int compteur = 0;
