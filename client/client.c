@@ -56,7 +56,6 @@ int stop = 0;
 char *msgfichier = " ";
 int compteur = 0;
 int nb_elements = 0;
-char *msgaenvoyer;
 
 // Création des threads
 pthread_t thread_envoi;
@@ -131,7 +130,7 @@ void *envoiPourThread()
 
 			FILE* fichier = fopen("fichiermsg.txt", "r");
 			long taille_fichier;
-			char ligne[100], *contenu;
+			char *contenu;
 
 			if (fichier)
 			{
@@ -144,7 +143,7 @@ void *envoiPourThread()
 				contenu = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
 
 				// Lire le contenu du fichier dans la variable
-        		fread(contenu, 1, taille_fichier, fichier);
+        			fread(contenu, 1, taille_fichier, fichier);
 
 				// Fermer le fichier
 				fclose(fichier);
@@ -206,7 +205,7 @@ void *receptionPourThread()
 
 			FILE* fichier = fopen("fichiermsg.txt", "r");
 			long taille_fichier;
-			char ligne[100], *contenu;
+			char *contenu;
 
 			if (fichier)
 			{
@@ -219,7 +218,7 @@ void *receptionPourThread()
 				contenu = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
 
 				// Lire le contenu du fichier dans la variable
-        		fread(contenu, 1, taille_fichier, fichier);
+        			fread(contenu, 1, taille_fichier, fichier);
 
 				// Fermer le fichier
 				fclose(fichier);
@@ -519,17 +518,67 @@ int main(int argc, char *argv[])
                         {
                             tailletxt -= 20;
                         }
+                        
                     }
 
-					if (event.key.keysym.sym == SDLK_RETURN) 
+			if (event.key.keysym.sym == SDLK_RETURN) 
+			{
+				int i;
+				for (i = 0; i < strlen(text); i++)
+				{
+					if (text[i] == '\0')
 					{
-						printf("%s\n",text);
-						int i;
-						for (i = 0; i < 256; i++)
-						{
-							text[i] = 0;
-						}
-						tailletxt = 0;
+						text[i+1] = '\n';
+					}
+				}
+				char *msgaenvoyer = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
+				msgaenvoyer[0] = ' ';
+				strcpy(msgaenvoyer ,text);
+				
+				for (i = 0; i < 256; i++)
+				{
+					text[i] = 0;
+				}
+			tailletxt = 0;
+			
+			printf("%s\n", msgaenvoyer);
+			
+			if (stop == 0)
+			{
+				FILE* fichiermsg = fopen("fichiermsg.txt", "a");
+				if (fichiermsg != NULL)
+				{
+					fprintf(fichiermsg, "Me : %s\n\n", msgaenvoyer);
+					fclose(fichiermsg);
+				}
+
+				FILE* fichier = fopen("fichiermsg.txt", "r");
+				long taille_fichier;
+				char *contenu2;
+
+				if (fichier)
+				{
+					// Obtenir la taille du fichier
+					fseek(fichier, 0, SEEK_END);
+					taille_fichier = ftell(fichier);
+					rewind(fichier);
+
+					// Allouer de la mémoire pour le contenu du fichier
+					contenu2 = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
+
+					// Lire le contenu du fichier dans la variable
+					fread(contenu2, 1, taille_fichier, fichier);
+
+					// Fermer le fichier
+					fclose(fichier);
+
+					// Utiliser le contenu du fichier
+					msgfichier = contenu2;
+					
+				}
+				envoi(msgaenvoyer);
+			}
+			free(msgaenvoyer);
                     }
                     break;
 
