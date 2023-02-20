@@ -371,7 +371,7 @@ int utilisationCommande(char *msg, char *pseudoEnvoyeur)
 		free(msgAEnvoyer);
 		return 1;
 	}
-	else if (strcmp(strToken, "/aide\n") == 0)
+	else if (strcmp(strToken, "/aide") == 0)
 	{
 		// Envoie de l'aide au client, un message par ligne
 		FILE *fichierCom = NULL;
@@ -398,7 +398,7 @@ int utilisationCommande(char *msg, char *pseudoEnvoyeur)
 		fclose(fichierCom);
 		return 1;
 	}
-	else if (strcmp(strToken, "/enLigne\n") == 0)
+	else if (strcmp(strToken, "/enLigne") == 0)
 	{
 		char *chaineEnLigne = malloc(sizeof(char) * (TAILLE_PSEUDO + 15) * 20); // Tous les 20 utilisateurs envoie de la chaine concaténée
 		int compteur = 0;

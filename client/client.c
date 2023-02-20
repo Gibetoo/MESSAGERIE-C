@@ -53,9 +53,9 @@ int portServeur;
 struct sockaddr_in aS;
 char *messageserveur;
 int stop = 0;
-char *msgfichier = " ";
 int compteur = 0;
 int nb_elements = 0;
+char *msgfichier = "Messagerie Initialisé";
 
 // Création des threads
 pthread_t thread_envoi;
@@ -81,7 +81,7 @@ void SDL_ExitWithError(const char *message);
  */
 int finDeCommunication(char *msg)
 {
-	if (strcmp(msg, "/fin\n") == 0)
+	if (strcmp(msg, "/fin") == 0 || strcmp(msg, "/fin\n") == 0)
 	{
 		return 1;
 	}
@@ -124,7 +124,7 @@ void *envoiPourThread()
 			FILE* fichiermsg = fopen("fichiermsg.txt", "a");
 			if (fichiermsg != NULL)
 			{
-				fprintf(fichiermsg, "Me : %s\n", m);
+				fprintf(fichiermsg, "Me : %s\n\n", m);
 				fclose(fichiermsg);
 			}
 
@@ -199,9 +199,11 @@ void *receptionPourThread()
 			FILE* fichiermsg = fopen("fichiermsg.txt", "a");
 			if (fichiermsg != NULL)
 			{
-				fprintf(fichiermsg, "%s\n", r);
+				fprintf(fichiermsg, "%s\n\n", r);
 				fclose(fichiermsg);
 			}
+			
+			sleep(0.5);
 
 			FILE* fichier = fopen("fichiermsg.txt", "r");
 			long taille_fichier;
@@ -532,7 +534,6 @@ int main(int argc, char *argv[])
 					}
 				}
 				char *msgaenvoyer = (char *)malloc(sizeof(char) * TAILLE_MESSAGE);
-				msgaenvoyer[0] = ' ';
 				strcpy(msgaenvoyer ,text);
 				
 				for (i = 0; i < 256; i++)
@@ -541,10 +542,18 @@ int main(int argc, char *argv[])
 				}
 			tailletxt = 0;
 			
-			printf("%s\n", msgaenvoyer);
+			// On vérifie si le client veut quitter la communication
+			estFin = finDeCommunication(msgaenvoyer);
+			
 			
 			if (stop == 0)
 			{
+				
+				if (estFin == 1)
+				{
+					sigintHandler(2);
+				}
+				
 				FILE* fichiermsg = fopen("fichiermsg.txt", "a");
 				if (fichiermsg != NULL)
 				{
@@ -578,7 +587,6 @@ int main(int argc, char *argv[])
 				}
 				envoi(msgaenvoyer);
 			}
-			free(msgaenvoyer);
                     }
                     break;
 
