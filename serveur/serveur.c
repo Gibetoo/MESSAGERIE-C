@@ -27,6 +27,7 @@ struct Client
 	long dSC;
 	int idSalon;
 	char *pseudo;
+	char *mdp;
 	long dSCFC;
 	char nomFichier[100];
 };
@@ -59,7 +60,8 @@ struct Salon
  */
 #define MAX_CLIENT 7
 #define MAX_SALON 3
-#define TAILLE_PSEUDO 20
+#define TAILLE_PSEUDO 21
+#define TAILLE_MDP 11
 #define TAILLE_MESSAGE 500
 
 /**
@@ -91,6 +93,7 @@ pthread_mutex_t mutexSalon;
 // Déclaration des fonctions
 int donnerNumClient();
 int verifPseudo(char *pseudo);
+int verifMdp (char *mdp);
 long pseudoTodSC(char *pseudo);
 void envoi(int dS, char *msg, int id);
 void envoiATous(char *msg);
@@ -147,6 +150,8 @@ int verifPseudo(char *pseudo)
 	return 0;
 }
 
+
+
 /**
  * @brief Fonction pour récupérer l'index dans tabClient selon un pseudo donné.
  *
@@ -166,6 +171,15 @@ long pseudoToInt(char *pseudo)
 		i++;
 	}
 	return -1;
+}
+
+int verifMdp(char *mdp){
+	for (int i = 0; i < MAX_CLIENT; i++) {
+		if (tabClient[i].estOccupe && strcmp(tabClient[i].mdp, mdp) == 0) {
+         	return 1;
+      		}
+   	}
+   	return 0;
 }
 
 /**
@@ -351,6 +365,8 @@ int utilisationCommande(char *msg, char *pseudoEnvoyeur)
 		pseudoAVerif = strtok(NULL, " ");
 		pseudoAVerif = strtok(pseudoAVerif, "\n");
 
+		
+
 		// Préparation du message à envoyer
 		char *msgAEnvoyer = (char *)malloc(sizeof(char) * (TAILLE_PSEUDO + 20));
 		strcat(msgAEnvoyer, pseudoAVerif);
@@ -463,8 +479,21 @@ void *communication(void *clientParam)
 		pseudo = strtok(pseudo, "\n");
 	}
 
-	tabClient[numClient].pseudo = (char *)malloc(sizeof(char) * TAILLE_PSEUDO);
-	strcpy(tabClient[numClient].pseudo, pseudo);
+	// Réception du mot de passe
+	char *mdp = (char *)malloc(sizeof(char) * (TAILLE_MDP + 29)); // voir Ligne 1330
+	reception(tabClient[numClient].dSC, mdp, sizeof(char) * TAILLE_MDP);
+	mdp = strtok(mdp, "\n");
+
+	while (mdp == NULL || verifMdp(mdp))
+	{
+		send(tabClient[numClient].dSC, "Mot de passe incorrecte\n", strlen("Mot de passe incorrecte\n") + 1, 0);
+		reception(tabClient[numClient].dSC, mdp, sizeof(char) * TAILLE_MDP);
+		mdp = strtok(mdp, "\n");
+	}
+
+    
+	tabClient[numClient].mdp = (char *)malloc(sizeof(char) * TAILLE_MDP);
+	strcpy(tabClient[numClient].mdp, mdp);
 	tabClient[numClient].idSalon = 0;
 
 	// On envoie un message pour dire au client qu'il est bien connecté
@@ -665,6 +694,8 @@ int main(int argc, char *argv[])
 		tabClient[numClient].dSC = dSC;
 		tabClient[numClient].pseudo = malloc(sizeof(char) * TAILLE_PSEUDO);
 		strcpy(tabClient[numClient].pseudo, " ");
+		tabClient[numClient].mdp= malloc(sizeof(char) * TAILLE_MDP);
+		strcpy(tabClient[numClient].mdp, " ");
 		pthread_mutex_unlock(&mutexTabClient);
 
 		//_____________________ Communication _____________________
@@ -677,7 +708,6 @@ int main(int argc, char *argv[])
 	shutdown(dS, 2);
 	sem_destroy(&semaphoreNbClients);
 	sem_destroy(&semaphoreThread);
-	pthread_mutex_destroy(&mutexTabClient);
 	printf("Fin du programme\n");
 	// #########################################################
 }

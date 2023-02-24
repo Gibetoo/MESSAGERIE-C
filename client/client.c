@@ -28,7 +28,8 @@
  * - WINDOW_WIDTH = taille de la fenêtre en largeur
  * - WINDOW_HEIGHT = taille de la fenêtre en hauteur
  */
-#define TAILLE_PSEUDO 20
+#define TAILLE_PSEUDO 21
+#define TAILLE_MDP 11
 #define TAILLE_MESSAGE 500
 #define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 768
@@ -266,7 +267,7 @@ int main(int argc, char *argv[])
 	while (strcmp(repServeur, "Pseudo déjà existant\n") == 0)
 	{
 		// Saisie du pseudo du client au clavier
-		printf(ANSI_COLOR_MAGENTA "Votre pseudo (maximum 19 caractères):\n" ANSI_COLOR_RESET);
+		printf(ANSI_COLOR_MAGENTA "Votre pseudo (maximum 20 caractères):\n" ANSI_COLOR_RESET);
 		fgets(monPseudo, TAILLE_PSEUDO, stdin);
 
 		for (int i = 0; i < strlen(monPseudo); i++)
@@ -282,11 +283,58 @@ int main(int argc, char *argv[])
 
 		// Récéption de la réponse du serveur
 		reception(repServeur, sizeof(char) * 61);
+		
+
+	}
+
+
+	// Saisie du mot de passe du client au clavier
+	char *monmdp = (char *)malloc(sizeof(char) * TAILLE_MDP);
+	do
+	{
+		printf(ANSI_COLOR_MAGENTA "\nVotre mot de passe (maximum 10 caractères):\n" ANSI_COLOR_RESET);
+		fgets(monmdp, TAILLE_MDP, stdin);
+		for (int i = 0; i < strlen(monmdp); i++)
+		{
+			if (monmdp[i] == ' ')
+			{
+				monmdp[i] = '_';
+			}
+		}
+	} while (strcmp(monmdp, "\n") == 0);
+
+	// Envoie du mot de passe
+	envoi(monmdp);
+
+	
+	// Récéption de la réponse du serveur
+	reception(repServeur, sizeof(char) * 61);
+	printf(ANSI_COLOR_MAGENTA "%s\n" ANSI_COLOR_RESET, repServeur);
+
+	while (strcmp(repServeur, "Mot de passe incorrecte\n") == 0)
+	{
+		// Saisie du pseudo du client au clavier
+		printf(ANSI_COLOR_MAGENTA "Votre mot de passe (maximum 10 caractères):\n" ANSI_COLOR_RESET);
+		fgets(monmdp, TAILLE_MDP, stdin);
+
+		for (int i = 0; i < strlen(monmdp); i++)
+		{
+			if (monmdp[i] == ' ')
+			{
+				monmdp[i] = '_';
+			}
+		}
+
+		// Envoie du pseudo
+		envoi(monmdp);
+
+		// Récéption de la réponse du serveur
+		reception(repServeur, sizeof(char) * 61);
 		printf(ANSI_COLOR_MAGENTA "%s\n" ANSI_COLOR_RESET, repServeur);
 
 	}
 
-	free(monPseudo);
+	free(monmdp);
 	boolConnect = 1;
 
 		//_____________________ Communication _____________________
